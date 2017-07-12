@@ -1,4 +1,4 @@
-# scipy-2016-symengine-talk
+# PyCon-India-2017-SymEngine-Talk
 
 ## How to build the talk
 
