@@ -3,13 +3,13 @@
 \usepackage[utf8]{inputenc}
 
 \title[SymEngine \hspace{14em}\insertframenumber/
-\inserttotalframenumber]{SymEngine, a fast symbolic manipulation library}
+\inserttotalframenumber]{SymEngine: \\A Fast Symbolic Manipulation Library}
 
 \usepackage{graphicx}
 \graphicspath{ {images/} }
 
 
-\author[O. Čertík, I. Fernando, ...]{Ondřej Čertík, Isuru Fernando, Thilina Rathnayake, Abhinav Agarwal, Sumith Kulal, Abinash Meher, Rajith Vidanaarachchi}
+\author[O. Čertík, I. Fernando, ...]{Ondřej Čertík, Isuru Fernando, Thilina Rathnayake, Abhinav Agarwal, Sumith Kulal, Abinash Meher, Rajith Vidanaarachchi, Shikhar Jaiswal, Ranjith Kumar}
 
 \begin{document}
 
@@ -39,14 +39,15 @@
 \framesubtitle{About SymEngine}
 \begin{itemize}
 \item Symbolic manipulation library written in C++
-\item Thin wrappers to Python, Ruby, Julia, C, ...
+\item Thin wrappers to Python, Ruby, Julia, C and Haskell
 \item \texttt{https://github.com/symengine/symengine}
 \item \texttt{https://github.com/symengine/symengine.py}
 \item \texttt{https://github.com/symengine/symengine.rb}
 \item \texttt{https://github.com/symengine/symengine.jl}
+\item \texttt{https://github.com/symengine/symengine.hs}
 \item MIT licensed
 \item Started in 2012
-\item 35 contributors
+\item 46 contributors
 \item Runs on Linux (GCC, Clang, Intel), OS X (GCC, Clang), Windows (MSVC,
     MinGW, MinGW-w64)
 \item Part of the SymPy organization, but the C++ library is Python independent
@@ -58,16 +59,16 @@
 \frametitle{Introduction}
 \framesubtitle{Goals}
 \begin{itemize}
-\item Be the fastest symbolic manipulation library (opensource or commercial)
+\item Be the fastest symbolic manipulation library (open-source or commercial)
 \item Serve as the core for SymPy and Sage
 \item Serve as the default symbolic manipulation library in other languages
-    thanks to thin wrappers (Python, Ruby, Julia, C, ...)
+    thanks to thin wrappers (Python, Ruby, Julia, C and Haskell)
 \end{itemize}
 \end{frame}
 
 
 \begin{frame}
-\frametitle{What language to use}
+\frametitle{Choice of Language}
 \begin{block}{Problem}
 SymPy speed is sometimes insufficient
 \begin{itemize}
@@ -78,7 +79,7 @@ SymPy speed is sometimes insufficient
 
 \begin{block}{Let's fix that}
 \begin{itemize}
-\item We tried: pure Python/PyPy, Cython, C
+\item We tried: pure Python/PyPy, Cython, C, ...
 \item Investigated Julia, Rust, Scala, Javascript, ...
 \item Chose C++
 \end{itemize}
@@ -91,14 +92,15 @@ SymPy speed is sometimes insufficient
 \begin{frame}
 \frametitle{Current Features}
 \begin{itemize}
-    \item Core (symbols, +, -, *, /, **)
-    \item Elementary Functions (sin, cos, Gamma, Erf)
-    \item Differentiation, substitution
+    \item Core (Symbols, +, -, *, /, **)
+    \item Elementary Functions (sin, cos, gamma, erf)
+    \item Differentiation, Substitution
     \item Matrices
     \item Polynomials (Piranha, Flint)
-    \item Series expansion
-    \item Printing, parsing
-    \item Numeric evaluation (double/arbitrary precision)
+    \item Series Expansion
+    \item Solvers
+    \item Printing, Parsing
+    \item Numeric Evaluation (Double/Arbitrary Precision)
 \end{itemize}
 \end{frame}
 
@@ -111,13 +113,13 @@ SymPy speed is sometimes insufficient
 \begin{frame}
 \frametitle{Why Pure C++}
 \begin{itemize}
-\item \textbf{Fast} in Release mode, but safe in Debug mode
+\item Fast in Release mode, but safe in Debug mode
 \item Compiler helps (not as good as Scala or Haskell, but much better than
     Python)
 \item Just one language to learn, thus easy to maintain (as opposed to several
     intertwined layers such as C + Cython + Python)
 \item Thin wrappers (that core developers do not need to maintain), all functionality in C++
-\item Easier to create bindings to other languages like Python, Julia, Ruby and Haskell.
+\item Easier to create bindings to other languages like Python, Julia, Ruby and Haskell
 \end{itemize}
 \end{frame}
 
@@ -153,7 +155,7 @@ SymPy speed is sometimes insufficient
 
 \begin{frame}
 \frametitle{Internals of SymEngine}
-\framesubtitle{How Add, Mul and Pow works}
+\framesubtitle{How Add, Mul and Pow work}
 \begin{itemize}
     \item Add uses \texttt{std::unordered\_map} (hashtable)
         \begin{itemize}
@@ -172,7 +174,7 @@ SymPy speed is sometimes insufficient
 
 \begin{frame}
 \frametitle{Internals of SymEngine}
-\framesubtitle{Extensibility using visitor pattern}
+\framesubtitle{Extensibility using Visitor Pattern}
 \begin{itemize}
     \item All algorithms implemented using visitor pattern
     \item Algorithm is implemented in its own file, separate from the core
@@ -186,7 +188,7 @@ SymPy speed is sometimes insufficient
 
 
 \begin{frame}[fragile]
-\frametitle{SymPy, SymEngine and the interface}
+\frametitle{SymPy, SymEngine and the Interface}
 \framesubtitle{Using SymPy in SymEngine}
 \begin{itemize}
 \item
@@ -209,7 +211,7 @@ What if there is no corresponding SymEngine object?
 
 
 \begin{frame}[fragile]
-\frametitle{SymPy, SymEngine and the interface}
+\frametitle{SymPy, SymEngine and the Interface}
 \framesubtitle{Using SymPy in SymEngine}
 \begin{itemize}
 \item
@@ -218,12 +220,12 @@ SymEngine will use Python callbacks to evaluate the SymPy object
 
 \begin{verbatim}
 
->>> e = x + sympy.loggamma(x)
->>> assert str(e) == "x + loggamma(x)"
+>>> e = x + sympy.Mod(x, 2)
+>>> assert str(e) == "x + Mod(x, 2)"
 >>> assert isinstance(e, Add)
 
 >>> f = e.subs({x : 10})
->>> assert f == 10 + log(362880)
+>>> assert f == 10
 
 >>> f = e.subs({x : 2})
 >>> assert f == 2
@@ -233,7 +235,7 @@ SymEngine will use Python callbacks to evaluate the SymPy object
 
 
 \begin{frame}[fragile]
-\frametitle{SymPy, SymEngine and the interface}
+\frametitle{SymPy, SymEngine and the Interface}
 \framesubtitle{Using SymEngine in SymPy}
 \begin{itemize}
 \item
@@ -285,7 +287,7 @@ Benchmarks were run in a Intel(R) Core(TM) i5-5200U CPU @ 2.20GHz running Ubuntu
 
 \begin{frame}[fragile]
 \frametitle{Benchmarks}
-\framesubtitle{Expand benchmark}
+\framesubtitle{Expand Benchmark}
 \begin{itemize}
 \item $ e = (x + y + z + w) ^ n $
 \item $ f = e * (e + w) $
@@ -309,7 +311,7 @@ f = e * (e + w)
 
 \begin{frame}
 \frametitle{Benchmarks}
-\framesubtitle{Expand benchmark}
+\framesubtitle{Expand Benchmark}
 \includegraphics[width=10cm]{expand2}
 \end{frame}
 
@@ -334,7 +336,7 @@ f = e * (e + w)
 
 \begin{frame}
 \frametitle{Benchmarks}
-\framesubtitle{Modified GiNaC benchmark}
+\framesubtitle{Modified GiNaC Benchmark}
 \begin{itemize}
 \item Let $e$ be the expanded sum of 2 symbols $\{a_0, a_1\}$ and $n-2$ trigonometric functions $\{sin(a_2), sin(a_3)...sin(a_{n-1})\}$ squared:\\
 e $\leftarrow (a_0+a_1+\sum_{i=2}^{n-1} sin(a_i))^2$
@@ -346,7 +348,7 @@ e $\leftarrow (a_0+a_1+\sum_{i=2}^{n-1} sin(a_i))^2$
 
 \begin{frame}[fragile]
 \frametitle{Benchmarks}
-\framesubtitle{Modified GiNaC benchmark}
+\framesubtitle{Modified GiNaC Benchmark}
 \begin{verbatim}
 from symengine import symbols, sin
 from time import clock
@@ -366,7 +368,7 @@ t2 = clock()
 
 \begin{frame}
 \frametitle{Benchmarks}
-\framesubtitle{Modified GiNaC benchmark}
+\framesubtitle{Modified GiNaC Benchmark}
 \includegraphics[width=10cm]{expand6b}
 \end{frame}
 
@@ -434,8 +436,8 @@ n & SymEngine + SymPy & SymPy only & Speedup\\
 \frametitle{Summary}
 \begin{itemize}
  \item SymEngine aims to be the fastest C++ symbolic manipulation library
- \item Thin wrappers to other languages (Python, Ruby, Julia, C, ...)
- \item Easily usable as an optional backend in SymPy (and Sage)
+ \item Thin wrappers to other languages (Python, Ruby, Julia, C and Haskell)
+ \item Easily usable as an optional backend in SymPy, Sage and PyDy
 \end{itemize}
 \end{frame}
 
@@ -451,6 +453,7 @@ GitHub:
 \item \texttt{https://github.com/symengine/symengine.py}
 \item \texttt{https://github.com/symengine/symengine.rb}
 \item \texttt{https://github.com/symengine/symengine.jl}
+\item \texttt{https://github.com/symengine/symengine.hs}
 \end{itemize}
 Mailinglist:
 \begin{itemize}
