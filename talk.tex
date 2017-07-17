@@ -27,7 +27,10 @@
 \item Demo (Python, Ruby, Julia)
 \item Why C++, how to write safe code
 \item Internals of SymEngine
+\item SymEngine and SymEngine.py
 \item Roadmap for using SymEngine in SymPy
+\item Roadmap for using SymEngine in Sage
+\item Roadmap for using SymEngine in PyDy
 \item Benchmarks
 \end{itemize}
 \end{block}
@@ -60,7 +63,7 @@
 \framesubtitle{Goals}
 \begin{itemize}
 \item Be the fastest symbolic manipulation library (open-source or commercial)
-\item Serve as the core for SymPy and Sage
+\item Serve as the core for SymPy and Sage, optionaly supporting PyDy
 \item Serve as the default symbolic manipulation library in other languages
     thanks to thin wrappers (Python, Ruby, Julia, C and Haskell)
 \end{itemize}
@@ -77,7 +80,7 @@ SymPy speed is sometimes insufficient
 \end{itemize}
 \end{block}
 
-\begin{block}{Let's fix that}
+\begin{block}{Let's Fix That}
 \begin{itemize}
 \item We tried: pure Python/PyPy, Cython, C, ...
 \item Investigated Julia, Rust, Scala, Javascript, ...
@@ -94,13 +97,14 @@ SymPy speed is sometimes insufficient
 \begin{itemize}
     \item Core (Symbols, +, -, *, /, **)
     \item Elementary Functions (sin, cos, gamma, erf)
+    \item Number Theory
     \item Differentiation, Substitution
-    \item Matrices
+    \item Matrices and Sets
     \item Polynomials (Piranha, Flint)
     \item Series Expansion
-    \item Solvers
-    \item Printing, Parsing
-    \item Numeric Evaluation (Double/Arbitrary Precision)
+    \item Solvers (Polynomial and Trigonometric)
+    \item Printing, Parsing and Code Generation
+    \item Numeric Evaluation (Double and Arbitrary Precision)
 \end{itemize}
 \end{frame}
 
@@ -155,19 +159,44 @@ SymPy speed is sometimes insufficient
 
 \begin{frame}
 \frametitle{Internals of SymEngine}
-\framesubtitle{How Add, Mul and Pow work}
+\framesubtitle{How Add Class Works}
 \begin{itemize}
-    \item Add uses \texttt{std::unordered\_map} (hashtable)
+    \item Add stores the various algebraic terms in a dictionary as variable-coefficient 
+        pairs, while separately storing the constant term of the expression
+    \item Add uses \texttt{std::unordered\_map} (hashtable) for the dictionary
         \begin{itemize}
             \item $2xy^2+3x^2y + 5\to \{xy^2: 2, x^2y: 3\}; coeff=5 $
         \end{itemize}
+    \item Each object is reference counted (RCP), hence very fast implementation in
+        Release mode
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Internals of SymEngine}
+\framesubtitle{How Mul Class Works}
+\begin{itemize}
+    \item Mul stores the various algebraic terms in a dictionary as base-exponent 
+        pairs, while separately storing the constant coefficient of the expression
     \item Mul uses \texttt{std::map} (red-black tree)
         \begin{itemize}
             \item $2 xy^2 \to \{x: 1, y:2\}; coeff=2$
         \end{itemize}
     \item Pow just stores the base and exponent
-    \item Each object is reference counted (RCP), very fast implementation in
-        Release mode
+    \item Each object is, like in the case of Add class, reference counted (RCP)
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Internals of SymEngine}
+\framesubtitle{How Pow Class Works}
+\begin{itemize}
+    \item Pow just stores the base and exponent as individual RCP objects, no dictionaries are used for storage
+        \begin{itemize}
+            \item $ x^5 \to base=x; coeff=5$
+        \end{itemize} 
 \end{itemize}
 \end{frame}
 
