@@ -178,7 +178,6 @@ SymPy speed is sometimes insufficient
         \begin{itemize}
             \item $2 xy^2 \to \{x: 1, y:2\}; coeff=2$
         \end{itemize}
-    \item Pow just stores the base and exponent
     \item Each object is, like in the case of Add class, reference counted (RCP)
 \end{itemize}
 \end{frame}
@@ -206,7 +205,7 @@ SymPy speed is sometimes insufficient
         user code)
     \item Special version with just one virtual function call (faster, but must
         be compiled as part of the SymEngine source code)
-    \item The speed difference between the two is minor
+    \item The speed difference between the two is minor for practical purposes
 \end{itemize}
 \end{frame}
 
