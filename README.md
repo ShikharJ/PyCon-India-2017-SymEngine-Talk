@@ -6,4 +6,4 @@ Execute:
 
     make
 
-The talk will be compiled into talk.pdf.
+The talk will be compiled into talk.pdf. It can be directly viewed in the main repository.

@@ -211,8 +211,77 @@ SymPy speed is sometimes insufficient
 
 
 \begin{frame}[fragile]
-\frametitle{SymPy, SymEngine and the Interface}
-\framesubtitle{Using SymPy in SymEngine}
+\frametitle{SymEngine and SymEngine.py}
+\framesubtitle{Designing The Interface}
+\begin{itemize}
+    \item SymEngine.py uses Cython's native support for C++ constructs.
+    \item Uses Cython's $libcpp$ module for importing $bool$, $string$, $map$,
+        $vector$ and $pair$ data types.
+    \item Declares $set$, $multiset$ and $unordered\_map$ directly from C++'s 
+        $<set>$ module, as Cython's $libcpp.set$ does not support multi-template 
+        arguments to any of them.
+    \begin{verbatim}
+    cdef extern from "<set>" namespace "std":
+        cdef cppclass set[T, U]:
+    \end{verbatim}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{SymEngine and SymEngine.py}
+\framesubtitle{Designing The Interface}
+\begin{itemize}
+    \item Additionally, maintains .pxd files with cdef extern from blocks and (if existing)
+        the C++ namespace name:
+    \begin{verbatim}
+    cdef extern from "<symengine/symbol.h>" namespace 
+    "SymEngine":
+    \end{verbatim}
+\item In these blocks, we declare SymEngine's classes as cdef cppclass blocks:
+    \begin{verbatim}
+    cdef cppclass Symbol(Basic):
+    \end{verbatim}
+\item And then declare SymEngine's public names (variables, methods and constructors):
+    \begin{verbatim}
+    Symbol(string name) nogil
+    string get_name() nogil
+    \end{verbatim}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{SymEngine and SymEngine.py}
+\framesubtitle{Working With SymEngine's Data Types}
+\begin{itemize}
+    \item Cython classes implemented for data types available in SymEngine, and Python
+        classes for types currently unavailable.
+    \item As soon as a class object is called, a SymEngine equivalent object is created
+        and passed to a dedicated function ($c2py$).
+    \item The function takes the object and returns the corresponding Cython
+        or Python counterpart for usage.
+    \item Conversely, another dedicated function ($sympy2symengine$) takes a Python object
+        and returns the SymEngine equivalent.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{SymEngine and SymEngine.py}
+\framesubtitle{Testing The Interface}
+\begin{itemize}
+    \item Since specific classes are created for each data type, the functionalities
+        can be directly called, just as in the case of SymPy.
+    \item Most of the test cases derive directly from SymPy's test suite for filtering
+        out inconsistencies and finding the fundamental differences.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{SymPy, SymEngine and SymEngine.py}
+\framesubtitle{Using SymEngine in SymPy}
 \begin{itemize}
 \item
 SymEngine will convert any SymPy object to a corresponding SymEngine object before doing any operation
@@ -234,8 +303,8 @@ What if there is no corresponding SymEngine object?
 
 
 \begin{frame}[fragile]
-\frametitle{SymPy, SymEngine and the Interface}
-\framesubtitle{Using SymPy in SymEngine}
+\frametitle{SymPy, SymEngine and SymEngine.py}
+\framesubtitle{Using SymEngine in SymPy}
 \begin{itemize}
 \item
 SymEngine will keep a reference to a SymPy object if there is no corresponding SymEngine object using Python/C API.
@@ -258,7 +327,7 @@ SymEngine will use Python callbacks to evaluate the SymPy object
 
 
 \begin{frame}[fragile]
-\frametitle{SymPy, SymEngine and the Interface}
+\frametitle{SymPy, SymEngine and SymEngine.py}
 \framesubtitle{Using SymEngine in SymPy}
 \begin{itemize}
 \item
@@ -268,12 +337,103 @@ SymEngine will use Python callbacks to evaluate the SymPy object
 \item Most things can be used unmodified
 \item Few things are fundamentally different (e.g. SymPy stores \texttt{I} as
     \texttt{ImaginaryUnit}, SymEngine has a \texttt{Complex} class)
-\item We will have a compatibility layer, probably similar to Python 2 and 3
-    support using the same source base.
+\item SymEngine.py accounts for this incompatibility by having a Python class
+    implemented for \texttt{ImaginaryUnit} returning \texttt{I}
+\item Singleton class also implemented in SymEngine.py to account for SymPy's
+    Singleton pattern.
 \end{itemize}
 \end{frame}
 
 
+\begin{frame}[fragile]
+\frametitle{SymPy, SymEngine and SymEngine.py}
+\framesubtitle{Speeding Up - Past Strategy}
+\begin{itemize}
+\item Create an old\_core\_api.py module, which will define the API to the core, the implementation will just import things from the current core.
+\item All client code (that is, the rest of SymPy that uses the core) will access things from the core through old\_core\_api.py only.
+\item Each method accepts SymPy objects, converts to SymEngine, calls SymEngine's counterpart, and converts the result back to SymPy. Then it validates the result by calling SymPy's class directly and compares the final expressions.
+\item Remove the validation and remove the SymPy's core, that is not used at this point. Tests must still pass, since we didn't change any results from the previous step.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{SymPy, SymEngine and SymEngine.py}
+\framesubtitle{Speeding Up - Current Approach}
+\begin{itemize}
+\item Define a file backend.py in SymPy's core, for providing optional support of
+    SymEngine's routines through USE flags.
+    \begin{verbatim}
+    USE_SYMENGINE = os.getenv('USE_SYMENGINE', '0')
+    USE_SYMENGINE = USE_SYMENGINE.lower() 
+                    in ('1', 't', 'true')
+    if USE_SYMENGINE:
+        from symengine import ...
+    else:
+        from sympy import ...
+    \end{verbatim}
+\item Shift all the viable imports used in a particular module of interest 
+    to import from backend.py
+    \begin{verbatim}
+    sympy/liealgebras/weyl_group.py
+    from sympy.core.backend import Matrix, eye ..
+    \end{verbatim}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{SymPy, SymEngine and SymEngine.py}
+\framesubtitle{Speeding Up - Current Approach}
+\begin{itemize}
+\item Hence, SymEngine's routines are directly used for backend computations
+    whenever the USE flag is set.
+\item As such, no SymPy-$>$SymEngine-$>$SymPy conversion cycle is required, leading
+    to maximum performance improvement and minimal changes.
+\item When the USE flag is unset, routines are imported from SymPy core itself.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Sage, SymEngine and SymEngine.py}
+\framesubtitle{Using SymEngine in Sage}
+\begin{itemize}
+\item Every particular class in SymEngine.py, having a corresponding data type
+    in Sage, has a callable $\_sage\_()$  sub-routine.
+\item Hence the conversion of SymEngine objects to Sage compatible type is handled
+    through the above sub-routine itself.
+
+\begin{verbatim}
+assert Integer(12)._sage_() == sage.Integer(12)
+\end{verbatim}
+\item Additionally, every particular class also has a callable $\_sympy\_()$ sub-routine,
+    for converting objects to SymPy specific types, which is accessed through $sympify$
+    function. This allows us to do the following:
+
+\begin{verbatim}
+assert Integer(12) == sympify(sage.Integer(12))
+\end{verbatim}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{PyDy, SymEngine and SymEngine.py}
+\framesubtitle{Using SymEngine in PyDy}
+\begin{itemize}
+\item PyDy, short for Python Dynamics, is a tool kit written in the Python programming language to enable the study of multibody dynamics.
+\item Directly uses the APIs of SymPy's mechanics module which currently has the optional SymEngine usage option, keeping the code-related changes minimal.
+\item Hence, the idea here is to use SymEngine in the same way as used by many SymPy
+modules, through optional flags and shifting the following imports:
+
+\begin{verbatim}
+from sympy import symbols ...
+to
+from sympy.core.backend import symbols ...
+\end{verbatim}
+\end{itemize}
+\end{frame}
 
 
 \begin{frame}
